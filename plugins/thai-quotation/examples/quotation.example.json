@@ -1,0 +1,31 @@
+{
+  "customer": {
+    "companyName": "บริษัท รองรับ เทคโนโลยี จำกัด",
+    "address": "456 ถนนเมืองไทย แขวงวัฒนา เขตบางนา กรุงเทพฯ 10260",
+    "contactName": "นายประเทศ สวัสดี",
+    "phone": "02-111-2222",
+    "taxId": "0-1234-56789-00-1"
+  },
+  "items": [
+    {
+      "description": "พัฒนาเว็บไซต์บริษัท (Responsive Design, CMS Integration)",
+      "qty": 1,
+      "unit": "โปรเจค",
+      "unitPrice": 45000
+    },
+    {
+      "description": "บริการเว็บโฮสติ้งแบบจัดการเต็มรูปแบบ (รวม SSL Certificate, สำรองข้อมูลรายวัน, Email Account 10 ตัว)",
+      "qty": 12,
+      "unit": "เดือน",
+      "unitPrice": 2500
+    },
+    {
+      "description": "บริการดูแลรักษาเว็บไซต์และระบบ (Support, Update, Monitoring)",
+      "qty": 3,
+      "unit": "เดือน",
+      "unitPrice": 5000
+    }
+  ],
+  "discount": 0,
+  "note": "สินค้าทุกรายการมีประกัน 1 ปี ขอให้ตรวจสอบและเสนอราคาจนกว่าจะแจ้งการเปลี่ยนแปลง"
+}

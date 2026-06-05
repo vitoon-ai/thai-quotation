@@ -1,0 +1,6 @@
+{
+  "name": "thai-quotation",
+  "version": "1.0.0",
+  "description": "สร้างใบเสนอราคา (ใบเสนอราคา/Quotation) ภาษาไทย เป็นไฟล์ HTML พร้อมพิมพ์เป็น PDF คำนวณ VAT 7% และจำนวนเงินตัวอักษรอัตโนมัติ",
+  "author": { "name": "BoomBigNose", "email": "mkt.vitoon@gmail.com" }
+}
