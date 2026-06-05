@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
   ตัวติดตั้งปลั๊กอิน thai-quotation สำหรับ Claude Code (Windows)
