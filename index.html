@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>thai-quotation — ออกใบเสนอราคาภาษาไทยใน Claude Code แค่พิมพ์ /quotation</title>
+<meta name="description" content="ปลั๊กอิน Claude Code สำหรับออกใบเสนอราคาภาษาไทยเป็น HTML พร้อมพิมพ์ PDF คำนวณ VAT 7% และจำนวนเงินตัวอักษรอัตโนมัติ">
+<meta property="og:title" content="thai-quotation — ใบเสนอราคาภาษาไทยใน Claude Code">
+<meta property="og:description" content="แค่พิมพ์ /quotation ก็ได้ใบเสนอราคาระดับมืออาชีพ VAT 7% + จำนวนเงินตัวอักษรอัตโนมัติ">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Trirong:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6ECD7;
+    --paper-2:#FBF4E6;
+    --paper-deep:#EFE2C6;
+    --ink:#1B1812;
+    --ink-soft:#5A5142;
+    --ink-faint:#8C8068;
+    --line:#D8C7A3;
+    --accent:#FFD600;
+    --accent-ink:#1B1812;
+    --stamp:#D23B26;
+    --green:#2F6B4F;
+    --radius:3px;
+    --maxw:1180px;
+    --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'IBM Plex Sans Thai',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+  /* paper grain + faint ruled lines */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    mix-blend-mode:multiply;opacity:.7;
+  }
+  ::selection{background:var(--accent);color:var(--ink)}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+
+  /* ===== type ===== */
+  .serif{font-family:'Trirong',serif}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--ink-soft);display:inline-flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--ink-soft)}
+
+  /* ===== top bar ===== */
+  header.nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:saturate(140%) blur(6px);
+    background:color-mix(in srgb,var(--paper) 86%,transparent);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:600;letter-spacing:.01em}
+  .brand .glyph{
+    width:30px;height:30px;display:grid;place-items:center;background:var(--ink);color:var(--accent);
+    font-family:'IBM Plex Mono',monospace;font-weight:600;border-radius:var(--radius);font-size:17px;
+    box-shadow:3px 3px 0 var(--accent);
+  }
+  .brand b{font-family:'IBM Plex Mono',monospace;font-weight:500}
+  .nav-links{display:flex;align-items:center;gap:28px;font-size:14.5px}
+  .nav-links a{color:var(--ink-soft);transition:color .2s}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;border:1.5px solid var(--ink);
+    padding:8px 15px;border-radius:var(--radius);transition:.2s var(--ease);background:transparent;
+  }
+  .nav-cta:hover{background:var(--ink);color:var(--accent)}
+  @media(max-width:760px){.nav-links a:not(.nav-cta){display:none}}
+
+  /* ===== hero ===== */
+  .hero{padding:78px 0 70px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+  @media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:46px}}
+
+  h1.hero-title{
+    font-family:'Trirong',serif;font-weight:700;line-height:1.02;letter-spacing:-.01em;
+    font-size:clamp(40px,6.2vw,76px);margin:18px 0 22px;
+  }
+  h1 .hl{
+    position:relative;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-weight:500;
+    font-size:.82em;
+  }
+  h1 .hl::after{
+    content:"";position:absolute;left:-4px;right:-4px;bottom:.08em;height:.42em;z-index:-1;
+    background:var(--accent);transform:rotate(-1deg);
+  }
+  .hero-sub{font-size:18.5px;color:var(--ink-soft);max-width:33em;margin-bottom:30px}
+  .hero-sub b{color:var(--ink);font-weight:600}
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:34px}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;font-weight:600;font-size:15px;
+    padding:13px 22px;border-radius:var(--radius);transition:.22s var(--ease);cursor:pointer;border:1.5px solid var(--ink);
+  }
+  .btn-primary{background:var(--ink);color:var(--accent);box-shadow:4px 4px 0 var(--accent)}
+  .btn-primary:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--accent)}
+  .btn-ghost{background:transparent;color:var(--ink)}
+  .btn-ghost:hover{background:var(--ink);color:var(--paper)}
+  .btn svg{width:18px;height:18px}
+
+  .stats{display:flex;gap:30px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:22px}
+  .stat .n{font-family:'Trirong',serif;font-weight:700;font-size:27px;line-height:1}
+  .stat .l{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.08em;color:var(--ink-faint);text-transform:uppercase;margin-top:6px}
+
+  /* ===== paper mockup ===== */
+  .doc-stage{position:relative;perspective:1600px}
+  .doc{
+    background:var(--paper-2);border:1px solid var(--line);
+    border-radius:var(--radius);padding:26px 24px 22px;position:relative;
+    box-shadow:0 1px 0 #fff inset, 22px 26px 50px -22px rgba(27,24,18,.45);
+    transform:rotate(1.6deg);
+  }
+  .doc::before{content:"";position:absolute;inset:0;border-radius:var(--radius);
+    background:linear-gradient(180deg,rgba(255,255,255,.5),transparent 30%);pointer-events:none}
+  .doc-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:12px}
+  .doc-co{font-family:'Trirong',serif;font-weight:700;font-size:16px}
+  .doc-co span{display:block;font-family:'IBM Plex Sans Thai';font-weight:400;font-size:10.5px;color:var(--ink-faint);margin-top:3px;letter-spacing:0}
+  .doc-title-tag{text-align:right}
+  .doc-title-tag b{font-family:'Trirong',serif;font-size:18px}
+  .doc-title-tag span{display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;color:var(--ink-faint)}
+  .doc-meta{display:flex;justify-content:space-between;margin:13px 0 12px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft)}
+  .doc-meta .v{color:var(--ink)}
+  table.doc-tbl{width:100%;border-collapse:collapse;font-size:11px}
+  table.doc-tbl th{background:var(--ink);color:var(--paper-2);font-weight:500;padding:6px 8px;text-align:left;font-size:9.5px;letter-spacing:.02em}
+  table.doc-tbl th:last-child,table.doc-tbl td:last-child{text-align:right}
+  table.doc-tbl td{border-bottom:1px solid var(--paper-deep);padding:7px 8px;font-family:'IBM Plex Sans Thai'}
+  table.doc-tbl td.num{font-family:'IBM Plex Mono',monospace}
+  .doc-tot{margin-top:12px;margin-left:auto;width:64%;font-size:11px}
+  .doc-tot .r{display:flex;justify-content:space-between;padding:3px 0;color:var(--ink-soft)}
+  .doc-tot .r .mono{color:var(--ink)}
+  .doc-tot .grand{margin-top:5px;padding:8px 10px;background:var(--accent);color:var(--ink);
+    display:flex;justify-content:space-between;font-weight:700;border-radius:2px}
+  .doc-words{margin-top:9px;text-align:center;font-family:'Trirong',serif;font-style:italic;font-size:11px;color:var(--ink-soft)}
+  .stamp{
+    position:absolute;right:-14px;top:84px;z-index:3;
+    font-family:'Trirong',serif;font-weight:700;font-size:15px;color:var(--stamp);
+    border:2.5px solid var(--stamp);border-radius:6px;padding:6px 13px;letter-spacing:.05em;
+    transform:rotate(-13deg);opacity:.86;background:color-mix(in srgb,var(--paper-2) 70%,transparent);
+    box-shadow:0 0 0 2px rgba(210,59,38,.12) inset;
+  }
+  .stamp small{display:block;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:7.5px;letter-spacing:.18em;text-align:center;margin-top:1px}
+  .doc-tab{
+    position:absolute;left:-16px;top:-16px;background:var(--ink);color:var(--accent);z-index:4;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:7px 12px;border-radius:var(--radius);
+    transform:rotate(-1.6deg);box-shadow:4px 4px 0 rgba(27,24,18,.18);
+  }
+
+  /* ===== section frame ===== */
+  section{padding:72px 0;position:relative}
+  .sec-head{max-width:640px;margin-bottom:46px}
+  .sec-head h2{font-family:'Trirong',serif;font-weight:700;font-size:clamp(28px,4vw,44px);line-height:1.08;margin:14px 0 12px;letter-spacing:-.01em}
+  .sec-head p{color:var(--ink-soft);font-size:17px}
+  .rule{height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 7px,transparent 7px 14px)}
+
+  /* ===== features ===== */
+  #features{background:var(--paper-deep)}
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);background:var(--paper);border-radius:var(--radius);overflow:hidden}
+  @media(max-width:860px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.feat-grid{grid-template-columns:1fr}}
+  .feat{
+    padding:30px 26px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+    transition:background .25s var(--ease);position:relative;background:var(--paper);
+  }
+  .feat:hover{background:var(--paper-2)}
+  .feat .no{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-faint);letter-spacing:.1em}
+  .feat .ic{font-size:25px;margin:14px 0 12px;display:block;line-height:1}
+  .feat h3{font-family:'Trirong',serif;font-weight:600;font-size:20px;margin-bottom:8px}
+  .feat p{font-size:14.5px;color:var(--ink-soft);line-height:1.6}
+  .feat::after{content:"";position:absolute;left:0;bottom:-1px;height:3px;width:0;background:var(--accent);transition:width .3s var(--ease)}
+  .feat:hover::after{width:100%}
+
+  /* ===== how ===== */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{border:1px solid var(--line);border-radius:var(--radius);padding:26px 24px;background:var(--paper-2);position:relative}
+  .step .badge{
+    width:46px;height:46px;display:grid;place-items:center;border-radius:50%;
+    background:var(--ink);color:var(--accent);font-family:'Trirong',serif;font-weight:700;font-size:20px;margin-bottom:16px;
+  }
+  .step h3{font-family:'Trirong',serif;font-weight:600;font-size:19px;margin-bottom:9px}
+  .step p{font-size:14.5px;color:var(--ink-soft);margin-bottom:14px}
+  .step .code{font-size:12.5px}
+  .arrow-d{position:absolute;right:-16px;top:46px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;font-size:20px;z-index:2}
+  @media(max-width:820px){.arrow-d{display:none}}
+
+  /* ===== code blocks ===== */
+  .code{
+    font-family:'IBM Plex Mono',monospace;background:var(--ink);color:#F4ECD8;border-radius:var(--radius);
+    padding:14px 16px;font-size:13.5px;position:relative;overflow:auto;border:1px solid #000;
+    box-shadow:5px 5px 0 var(--paper-deep);
+  }
+  .code .cmd{color:var(--accent)}
+  .code .dim{color:#9a8f76}
+  .code .ok{color:#9CD3A8}
+  .copy{
+    position:absolute;top:9px;right:9px;background:rgba(255,255,255,.08);color:#F4ECD8;border:1px solid rgba(255,255,255,.18);
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:4px 9px;border-radius:3px;cursor:pointer;transition:.18s;letter-spacing:.04em;
+  }
+  .copy:hover{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+  .copy.done{background:var(--green);color:#fff;border-color:var(--green)}
+
+  /* ===== install ===== */
+  #install{background:var(--ink);color:var(--paper)}
+  #install::before{content:"";position:absolute;inset:0;opacity:.05;pointer-events:none;
+    background-image:radial-gradient(var(--accent) 1px,transparent 1px);background-size:22px 22px}
+  #install .sec-head h2{color:var(--paper)}
+  #install .eyebrow,#install .eyebrow::before{color:var(--accent);background:var(--accent)}
+  #install .eyebrow{color:var(--accent)}
+  #install .sec-head p{color:#C9BEA6}
+  .install-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:start}
+  @media(max-width:820px){.install-grid{grid-template-columns:1fr;gap:28px}}
+  .install-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);border-radius:var(--radius);padding:26px}
+  .install-card h3{font-family:'Trirong',serif;font-weight:600;font-size:21px;margin-bottom:6px;color:var(--paper)}
+  .install-card .note{font-size:13.5px;color:#C9BEA6;margin:14px 0 0}
+  .install-card .note code{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-size:12.5px}
+  .install .code{box-shadow:5px 5px 0 rgba(255,214,0,.22);margin-top:6px}
+  .chk{list-style:none;font-size:14.5px}
+  .chk li{padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.16);display:flex;gap:11px;color:#E7DCC4}
+  .chk li:last-child{border-bottom:0}
+  .chk .y{color:var(--accent);font-weight:700;font-family:'IBM Plex Mono',monospace}
+
+  /* ===== footer ===== */
+  footer{padding:54px 0 40px;border-top:1px solid var(--line)}
+  .foot-grid{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+  .foot-cmd{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink-soft)}
+  .foot-cmd b{color:var(--ink)}
+  .foot-links{display:flex;gap:22px;font-size:14px}
+  .foot-links a{color:var(--ink-soft);border-bottom:1px solid transparent;transition:.2s}
+  .foot-links a:hover{color:var(--ink);border-color:var(--accent)}
+  .foot-fine{margin-top:26px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-faint);letter-spacing:.03em}
+
+  /* ===== reveal animation ===== */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+  @keyframes floaty{0%,100%{transform:rotate(1.6deg) translateY(0)}50%{transform:rotate(1.6deg) translateY(-9px)}}
+  .doc{animation:floaty 7s ease-in-out infinite}
+  @media(prefers-reduced-motion:reduce){.doc{animation:none}.reveal{opacity:1;transform:none;transition:none}}
+
+  /* hero load stagger */
+  .hero .lf{opacity:0;animation:rise .8s var(--ease) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .hero .lf{transform:translateY(20px)}
+  .d1{animation-delay:.05s}.d2{animation-delay:.16s}.d3{animation-delay:.27s}.d4{animation-delay:.38s}.d5{animation-delay:.5s}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <span class="glyph">฿</span>
+      <span>thai-<b>quotation</b></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">ฟีเจอร์</a>
+      <a href="#how">วิธีใช้</a>
+      <a href="#install">ติดตั้ง</a>
+      <a class="nav-cta" href="https://github.com/vitoon-ai/thai-quotation" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow lf d1">Claude Code Plugin · ภาษาไทย</span>
+      <h1 class="hero-title lf d2">
+        ออกใบเสนอราคา<br>
+        ระดับมืออาชีพ<br>
+        แค่พิมพ์ <span class="hl">/quotation</span>
+      </h1>
+      <p class="hero-sub lf d3">
+        ปลั๊กอินสำหรับ Claude Code ที่เปลี่ยนรายการสินค้า/บริการของคุณให้เป็น
+        <b>ใบเสนอราคาภาษาไทย</b> สวยพร้อมส่ง — คำนวณ <b>VAT 7%</b> และ
+        <b>จำนวนเงินตัวอักษร</b> ให้อัตโนมัติ เปิดในเบราว์เซอร์แล้วพิมพ์เป็น PDF ได้ทันที
+      </p>
+      <div class="cta-row lf d4">
+        <a class="btn btn-primary" href="#install">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+          ติดตั้งปลั๊กอิน
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/vitoon-ai/thai-quotation" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+          ดูซอร์สโค้ด
+        </a>
+      </div>
+      <div class="stats lf d5">
+        <div class="stat"><div class="n serif">VAT 7%</div><div class="l">คำนวณอัตโนมัติ</div></div>
+        <div class="stat"><div class="n serif">TH / EN</div><div class="l">เอกสาร 2 ภาษา</div></div>
+        <div class="stat"><div class="n serif">PDF&nbsp;A4</div><div class="l">พิมพ์จากเบราว์เซอร์</div></div>
+        <div class="stat"><div class="n serif">0 dep</div><div class="l">ไม่ต้องลงอะไรเพิ่ม</div></div>
+      </div>
+    </div>
+
+    <div class="doc-stage lf d3">
+      <div class="doc">
+        <div class="doc-tab">/quotation</div>
+        <div class="stamp">ใบเสนอราคา<small>QUOTATION</small></div>
+        <div class="doc-head">
+          <div class="doc-co">บริษัท ตัวอย่าง จำกัด<span>เลขประจำตัวผู้เสียภาษี 0-1055-00000-00-0</span></div>
+          <div class="doc-title-tag"><b>ใบเสนอราคา</b><span>No. QT-20260605-01</span></div>
+        </div>
+        <div class="doc-meta">
+          <span>วันที่ <span class="v">05/06/2569</span></span>
+          <span>ใช้ได้ถึง <span class="v">05/07/2569</span></span>
+        </div>
+        <table class="doc-tbl">
+          <thead><tr><th>รายละเอียด</th><th>จำนวน</th><th>จำนวนเงิน</th></tr></thead>
+          <tbody>
+            <tr><td>พัฒนาเว็บไซต์บริษัท</td><td class="num">1</td><td class="num">45,000.00</td></tr>
+            <tr><td>เว็บโฮสติ้ง (รายเดือน)</td><td class="num">12</td><td class="num">30,000.00</td></tr>
+            <tr><td>ดูแลรักษาระบบ</td><td class="num">3</td><td class="num">15,000.00</td></tr>
+          </tbody>
+        </table>
+        <div class="doc-tot">
+          <div class="r"><span>รวมเป็นเงิน</span><span class="mono">90,000.00</span></div>
+          <div class="r"><span>ภาษีมูลค่าเพิ่ม 7%</span><span class="mono">6,300.00</span></div>
+          <div class="grand"><span>ยอดรวมทั้งสิ้น</span><span class="mono">฿96,300.00</span></div>
+        </div>
+        <div class="doc-words">( เก้าหมื่นหกพันสามร้อยบาทถ้วน )</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="rule"></div></div>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">สิ่งที่ได้</span>
+      <h2>ทุกอย่างที่ใบเสนอราคาไทยต้องมี<br>โดยไม่ต้องคำนวณเอง</h2>
+      <p>ตั้งค่าข้อมูลบริษัทครั้งเดียว แล้วปล่อยให้ปลั๊กอินจัดการเรื่องน่าเบื่อทั้งหมด</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat reveal"><div class="no">01</div><span class="ic">🧮</span><h3>VAT 7% อัตโนมัติ</h3><p>กรอกราคาก่อนภาษี ระบบบวก VAT 7% รวมยอดสุทธิ และรองรับส่วนลด + หัก ณ ที่จ่าย</p></div>
+      <div class="feat reveal"><div class="no">02</div><span class="ic">✍️</span><h3>จำนวนเงินตัวอักษร</h3><p>แปลงยอดรวมเป็นภาษาไทย เช่น "เก้าหมื่นหกพันสามร้อยบาทถ้วน" ให้ถูกต้องทุกหลัก</p></div>
+      <div class="feat reveal"><div class="no">03</div><span class="ic">🔢</span><h3>เลขที่รันอัตโนมัติ</h3><p>ออกเลขเอกสารรูปแบบ QT-YYYYMMDD-NN ไล่ลำดับต่อวันให้เอง ไม่ซ้ำ ไม่ต้องจำ</p></div>
+      <div class="feat reveal"><div class="no">04</div><span class="ic">🌐</span><h3>เอกสาร 2 ภาษา</h3><p>ป้ายกำกับไทย/อังกฤษ วันที่แบบ พ.ศ. เลย์เอาต์มาตรฐานพร้อมช่องเซ็นอนุมัติ</p></div>
+      <div class="feat reveal"><div class="no">05</div><span class="ic">🖨️</span><h3>HTML → PDF</h3><p>ได้ไฟล์ HTML ขนาด A4 เปิดในเบราว์เซอร์ กด Print → Save as PDF ส่งลูกค้าได้เลย</p></div>
+      <div class="feat reveal"><div class="no">06</div><span class="ic">⚙️</span><h3>ปรับแต่งได้ (Generic)</h3><p>ข้อมูลบริษัท โลโก้ อัตรา VAT เงื่อนไขชำระเงิน ตั้งผ่านไฟล์ seller.json ใช้ได้ทุกธุรกิจ</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">วิธีใช้ · 3 ขั้น</span>
+      <h2>จากศูนย์ถึงใบเสนอราคา<br>ในไม่กี่นาที</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="badge serif">1</div>
+        <h3>ติดตั้งปลั๊กอิน</h3>
+        <p>เพิ่ม marketplace แล้วติดตั้งจาก Claude Code</p>
+        <div class="code"><span class="dim">/plugin marketplace add</span><br><span class="cmd">vitoon-ai/thai-quotation</span></div>
+        <span class="arrow-d">→</span>
+      </div>
+      <div class="step reveal">
+        <div class="badge serif">2</div>
+        <h3>ตั้งค่าผู้ขายครั้งเดียว</h3>
+        <p>คัดลอก seller.example.json ไปกรอกข้อมูลบริษัทของคุณ</p>
+        <div class="code"><span class="dim">.claude/quotation/</span><br><span class="cmd">seller.json</span></div>
+        <span class="arrow-d">→</span>
+      </div>
+      <div class="step reveal">
+        <div class="badge serif">3</div>
+        <h3>พิมพ์ /quotation</h3>
+        <p>ตอบคำถามทีละข้อ หรือวาง JSON มาเลย แล้วรับไฟล์</p>
+        <div class="code"><span class="cmd">/quotation</span> <span class="dim"># หรือวาง JSON</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">ติดตั้ง</span>
+      <h2>คัดลอก 2 บรรทัด แล้วเริ่มออกใบได้เลย</h2>
+      <p>ใช้งานได้ใน Claude Code ทุกที่ — ฟรี โอเพนซอร์ส</p>
+    </div>
+    <div class="install-grid">
+      <div class="install-card reveal">
+        <h3>1 · เพิ่ม &amp; ติดตั้ง</h3>
+        <div class="code" id="code-install"><button class="copy" data-copy="#code-install">คัดลอก</button><span class="cmd">/plugin</span> marketplace add vitoon-ai/thai-quotation<br><span class="cmd">/plugin</span> install thai-quotation@boombignose-local</div>
+        <p class="note">จากนั้นรีโหลด session แล้วใช้คำสั่ง <code>/quotation</code> ได้ทันที</p>
+        <h3 style="margin-top:24px">2 · ลองสร้างใบแรก</h3>
+        <div class="code" id="code-run"><button class="copy" data-copy="#code-run">คัดลอก</button><span class="cmd">/quotation</span><br><span class="dim"># ระบบจะถามข้อมูลลูกค้า → รายการ → ส่วนลด</span><br><span class="ok"># ✓ บันทึก quotations/QT-20260605-01.html</span></div>
+      </div>
+      <div class="install-card reveal">
+        <h3>ในกล่องมีอะไร</h3>
+        <ul class="chk">
+          <li><span class="y">✓</span> คำสั่ง <b>/quotation</b> (โหมดถาม + โหมด JSON)</li>
+          <li><span class="y">✓</span> เทมเพลต HTML A4 พร้อมพิมพ์ PDF</li>
+          <li><span class="y">✓</span> ไฟล์ตัวอย่าง seller &amp; quotation</li>
+          <li><span class="y">✓</span> เอกสารภาษาไทยครบ (README)</li>
+          <li><span class="y">✓</span> บันทึก .html + .json ทุกใบ ไว้แก้/ออกใหม่</li>
+        </ul>
+        <p class="note">ต้องการเฉพาะ Claude Code — <b style="color:var(--accent)">ไม่ต้องลง Python หรือไลบรารีใด ๆ</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-cmd">ออกใบเสนอราคาด้วย <b>/quotation</b> · thai-quotation@boombignose-local</div>
+      <div class="foot-links">
+        <a href="https://github.com/vitoon-ai/thai-quotation" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/vitoon-ai/thai-quotation/blob/main/plugins/thai-quotation/README.md" target="_blank" rel="noopener">เอกสาร</a>
+        <a href="#top">กลับขึ้นบน</a>
+      </div>
+    </div>
+    <div class="foot-fine">© <span id="yr"></span> vitoon-ai · Claude Code Plugin Marketplace · made with /quotation</div>
+  </div>
+</footer>
+
+<script>
+  // copy buttons
+  document.querySelectorAll('.copy').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const el=document.querySelector(btn.dataset.copy);
+      const txt=el.innerText.replace(/^คัดลอก\s*/,'').trim();
+      navigator.clipboard.writeText(txt).then(()=>{
+        const o=btn.textContent;btn.textContent='คัดลอกแล้ว ✓';btn.classList.add('done');
+        setTimeout(()=>{btn.textContent=o;btn.classList.remove('done')},1600);
+      });
+    });
+  });
+  // reveal on scroll
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.14});
+  document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%3*0.07)+'s';io.observe(el);});
+  // year
+  document.getElementById('yr').textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
