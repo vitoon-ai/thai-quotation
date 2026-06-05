@@ -6,7 +6,7 @@
       "name": "thai-quotation",
       "source": "./plugins/thai-quotation",
       "description": "สร้างใบเสนอราคาภาษาไทยเป็น HTML พร้อมพิมพ์เป็น PDF",
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   ]
 }

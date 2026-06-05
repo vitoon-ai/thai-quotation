@@ -3,16 +3,24 @@
 You are a Thai quotation assistant. When this command is invoked, execute every step below in order. Do not skip steps.  
 `$ARGUMENTS` = anything the user typed after `/quotation`.
 
+> **Paths in this command are portable.** Use these resolved locations:
+> - **Plugin root** = `${CLAUDE_PLUGIN_ROOT}` (where this plugin is installed)
+> - **Seller config** = `~/.claude/quotation/seller.json` in the user's home directory
+>   (expand `~`, e.g. `C:\Users\<username>\.claude\quotation\seller.json` on Windows,
+>   `$HOME/.claude/quotation/seller.json` on macOS/Linux)
+> - **Output folder** = `quotations/` inside the current project. Use `${CLAUDE_PROJECT_DIR}/quotations/`
+>   if that variable is set, otherwise the current working directory's `quotations/`.
+
 ---
 
 ## STEP 1: LOAD SELLER CONFIG
 
-Read the file `D:\ClaudeCode-Workshop\.claude\quotation\seller.json`.
+Read the seller config file at `~/.claude/quotation/seller.json` (resolve `~` to the user's home directory).
 
 - If the file does not exist or cannot be read, tell the user:
-  > ไม่พบไฟล์ข้อมูลบริษัท กรุณาคัดลอกไฟล์ตัวอย่างจาก  
-  > `D:\ClaudeCode-Workshop\marketplace\plugins\thai-quotation\examples\seller.example.json`  
-  > ไปยัง `D:\ClaudeCode-Workshop\.claude\quotation\seller.json`  
+  > ไม่พบไฟล์ข้อมูลบริษัท กรุณารันตัวติดตั้ง หรือคัดลอกไฟล์ตัวอย่างจาก  
+  > `${CLAUDE_PLUGIN_ROOT}/examples/seller.example.json`  
+  > ไปยัง `~/.claude/quotation/seller.json`  
   > แล้วกรอกข้อมูลบริษัทของคุณให้ครบถ้วน จากนั้นรัน `/quotation` อีกครั้ง
   
   Then **stop execution** — do not continue to Step 2.
@@ -43,7 +51,7 @@ Inspect `$ARGUMENTS`:
 
 1. **JSON block provided directly**: If `$ARGUMENTS` starts with `{` or contains a JSON object matching the `quotation.example.json` schema (with `customer` and `items` keys), parse it directly as the quotation input.
 
-2. **File path provided**: If `$ARGUMENTS` is a file path ending in `.json`, read that file and parse it as the quotation input. The file format matches `D:\ClaudeCode-Workshop\marketplace\plugins\thai-quotation\examples\quotation.example.json`.
+2. **File path provided**: If `$ARGUMENTS` is a file path ending in `.json`, read that file and parse it as the quotation input. The file format matches `${CLAUDE_PLUGIN_ROOT}/examples/quotation.example.json`.
 
 3. **Insufficient data** (no arguments or free-form text without structured data): Enter **Guided Mode** below.
 
@@ -89,12 +97,14 @@ Store all collected data as `input`.
 
 ## STEP 3: AUTO-NUMBER THE DOCUMENT
 
+Resolve the output folder: `${CLAUDE_PROJECT_DIR}/quotations/` if `CLAUDE_PROJECT_DIR` is set, otherwise `quotations/` in the current working directory. Call this `outputDir`.
+
 Compute today's date in format `YYYYMMDD` using the current date (Buddhist Era not used for filename; use CE year).  
 Example: if today is 5 June 2026, `today = "20260605"`.
 
-Scan the directory `D:\ClaudeCode-Workshop\quotations\` for files matching the pattern `QT-{today}-NN.*` (any extension).
+Scan `outputDir` for files matching the pattern `QT-{today}-NN.*` (any extension).
 
-- If the directory does not exist, create it with `mkdir D:\ClaudeCode-Workshop\quotations\`.
+- If `outputDir` does not exist, create it.
 - Count existing files with that date prefix. Let `NN` = count + 1, zero-padded to 2 digits.
   - Example: if `QT-20260605-01.html` already exists, next number is `02`.
   - If no files exist yet, `NN = "01"`.
@@ -157,7 +167,7 @@ Store as `amountInWords`.
 
 ## STEP 5: RENDER THE HTML
 
-Read the template file: `D:\ClaudeCode-Workshop\marketplace\plugins\thai-quotation\templates\quotation.html`
+Read the template file: `${CLAUDE_PLUGIN_ROOT}/templates/quotation.html`
 
 ### Compute dates (Buddhist Era)
 
@@ -300,14 +310,14 @@ Replace every `{{placeholder}}` in the template with its computed value:
 
 ### Write the HTML file
 
-Path: `D:\ClaudeCode-Workshop\quotations\{docNumber}.html`  
+Path: `{outputDir}/{docNumber}.html` (outputDir from Step 3)  
 Content: the fully substituted HTML from Step 5.
 
 Use the Write tool to create this file.
 
 ### Write the JSON data file
 
-Path: `D:\ClaudeCode-Workshop\quotations\{docNumber}.json`  
+Path: `{outputDir}/{docNumber}.json`  
 Content: a JSON object with this structure:
 
 ```json
@@ -344,12 +354,12 @@ Use the Write tool to create this file.
 
 ## STEP 7: REPORT TO USER
 
-Display the following:
+Display the following (use the real saved path):
 
 ```
 ✅ สร้างใบเสนอราคาเรียบร้อยแล้ว
 
-📄 ไฟล์: D:\ClaudeCode-Workshop\quotations\{docNumber}.html
+📄 ไฟล์: {outputDir}/{docNumber}.html
 
 ┌─────────────────────────────────────────────────┐
 │  สรุปยอด                                        │
@@ -375,7 +385,7 @@ Then show this instruction:
 ## IMPORTANT NOTES
 
 - Always use the Read and Write tools to access files — do not rely on memory for file contents.
-- Always create `D:\ClaudeCode-Workshop\quotations\` directory before writing if it does not exist.
+- Always create the output folder (Step 3 `outputDir`) before writing if it does not exist.
 - The `priceMode` is always `"exclusive"` per the spec — unit prices shown in the document do not include VAT.
 - All Thai text in the output must be correctly encoded UTF-8.
 - If any file operation fails, report the error clearly and tell the user what to check.

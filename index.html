@@ -400,7 +400,10 @@
     </div>
     <div class="install-grid">
       <div class="install-card reveal">
-        <h3>1 · เพิ่ม &amp; ติดตั้ง</h3>
+        <h3>1 · ติดตั้งอัตโนมัติ <span style="font-size:13px;color:var(--accent)">· Windows</span></h3>
+        <div class="code" id="code-ps"><button class="copy" data-copy="#code-ps">คัดลอก</button><span class="dim"># เปิด PowerShell แล้วรันบรรทัดเดียว</span><br>irm https://raw.githubusercontent.com/vitoon-ai/thai-quotation/main/install.ps1 | iex</div>
+        <p class="note">โหลด marketplace · ติดตั้ง · เปิดใช้งาน · สร้าง <code>seller.json</code> ให้อัตโนมัติ (สำรอง config เดิมทุกครั้ง)</p>
+        <h3 style="margin-top:24px">หรือ · ติดตั้งด้วยมือใน Claude Code</h3>
         <div class="code" id="code-install"><button class="copy" data-copy="#code-install">คัดลอก</button><span class="cmd">/plugin</span> marketplace add vitoon-ai/thai-quotation<br><span class="cmd">/plugin</span> install thai-quotation@boombignose-local</div>
         <p class="note">จากนั้นรีโหลด session แล้วใช้คำสั่ง <code>/quotation</code> ได้ทันที</p>
         <h3 style="margin-top:24px">2 · ลองสร้างใบแรก</h3>
@@ -409,6 +412,7 @@
       <div class="install-card reveal">
         <h3>ในกล่องมีอะไร</h3>
         <ul class="chk">
+          <li><span class="y">✓</span> ตัวติดตั้งอัตโนมัติ <b>install.ps1</b> (Windows)</li>
           <li><span class="y">✓</span> คำสั่ง <b>/quotation</b> (โหมดถาม + โหมด JSON)</li>
           <li><span class="y">✓</span> เทมเพลต HTML A4 พร้อมพิมพ์ PDF</li>
           <li><span class="y">✓</span> ไฟล์ตัวอย่าง seller &amp; quotation</li>
